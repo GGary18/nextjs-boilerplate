@@ -61,13 +61,11 @@ export default function CssaVerificationNotice({
     loadSchoolInfo();
   }, [schoolShortName, supabase]);
 
-  const contactEmail =
-    schoolInfo?.cssa_contact_email?.trim() || FALLBACK_EMAIL;
-
-  const hasSchoolCssaEmail = Boolean(schoolInfo?.cssa_contact_email?.trim());
+  const schoolCssaEmail = schoolInfo?.cssa_contact_email?.trim() || "";
+  const hasSchoolCssaEmail = Boolean(schoolCssaEmail);
 
   return (
-    <section className="rounded-3xl border border-neutral-800 bg-neutral-900/40 p-6">
+    <section className="mt-8 rounded-3xl border border-neutral-800 bg-neutral-900/40 p-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
           <p className="text-sm text-neutral-400">CSSA 认证</p>
@@ -75,6 +73,10 @@ export default function CssaVerificationNotice({
           <h2 className="mt-2 text-xl font-semibold">
             {getStatusText(cssaStatus)}
           </h2>
+
+          <p className="mt-3 text-sm leading-6 text-neutral-500">
+            CSSA 认证会显示在你的用户信息旁边，用于提高交易可信度。
+          </p>
         </div>
 
         <span
@@ -90,15 +92,15 @@ export default function CssaVerificationNotice({
 
       <div className="mt-5 rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
         {loading ? (
-          <p className="text-sm text-neutral-400">正在读取认证邮箱...</p>
-        ) : (
+          <p className="text-sm text-neutral-400">正在读取认证信息...</p>
+        ) : hasSchoolCssaEmail ? (
           <>
             <p className="text-sm leading-7 text-neutral-300">
               如需 CSSA 认证，请发送邮件至：
             </p>
 
             <p className="mt-2 break-all text-lg font-semibold text-white">
-              {contactEmail}
+              {schoolCssaEmail}
             </p>
 
             <p className="mt-4 text-sm leading-7 text-neutral-400">
@@ -108,12 +110,32 @@ export default function CssaVerificationNotice({
               </span>
               。邮件中请附上你的 Campus Market 注册邮箱，以及能证明学生身份的材料。
             </p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm leading-7 text-neutral-300">
+              该学校暂未对接 CSSA 管理员。
+            </p>
 
-            {!hasSchoolCssaEmail && (
-              <p className="mt-4 text-xs leading-6 text-neutral-600">
-                当前学校暂未配置单独的 CSSA 认证邮箱，所以暂时使用平台联系邮箱。
-              </p>
-            )}
+            <p className="mt-4 text-sm leading-7 text-neutral-400">
+              如需认证，可以先联系平台邮箱：
+            </p>
+
+            <p className="mt-2 break-all text-lg font-semibold text-white">
+              {FALLBACK_EMAIL}
+            </p>
+
+            <p className="mt-4 text-sm leading-7 text-neutral-400">
+              邮件标题请写：
+              <span className="font-medium text-neutral-200">
+                Campus Market CSSA认证
+              </span>
+              。邮件中请附上你的 Campus Market 注册邮箱、所在学校，以及能证明学生身份的材料。
+            </p>
+
+            <p className="mt-4 text-xs leading-6 text-neutral-600">
+              平台会优先记录你的认证需求，并在该学校 CSSA 管理员对接后继续处理。
+            </p>
           </>
         )}
       </div>
