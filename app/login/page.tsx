@@ -44,6 +44,42 @@ function getSchoolScore(school: SchoolOption, query: string) {
   return 0;
 }
 
+function getFriendlySignupError(errorMessage: string) {
+  const message = errorMessage.toLowerCase();
+
+  if (message.includes("email rate limit")) {
+    return "确认邮件发送频率过高，请稍后再试。";
+  }
+
+  if (message.includes("already registered") || message.includes("already exists")) {
+    return "这个邮箱可能已经注册过了。请直接登录，或者检查邮箱里的确认邮件。";
+  }
+
+  if (message.includes("invalid email")) {
+    return "邮箱格式不正确，请检查后重新填写。";
+  }
+
+  if (message.includes("password")) {
+    return "密码不符合要求，请至少填写 6 位。";
+  }
+
+  return `注册失败：${errorMessage}`;
+}
+
+function getFriendlyLoginError(errorMessage: string) {
+  const message = errorMessage.toLowerCase();
+
+  if (message.includes("email not confirmed")) {
+    return "这个邮箱还没有完成确认。请先打开学校邮箱，点击 Campus Market 注册确认邮件。";
+  }
+
+  if (message.includes("invalid login credentials")) {
+    return "邮箱或密码不正确。请检查后重试。";
+  }
+
+  return `登录失败：${errorMessage}`;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -62,6 +98,8 @@ export default function LoginPage() {
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
+
+  const [signupSuccessEmail, setSignupSuccessEmail] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [schoolLoading, setSchoolLoading] = useState(true);
@@ -147,7 +185,7 @@ export default function LoginPage() {
 
     if (error) {
       console.error(error);
-      setMessage(`登录失败：${error.message}`);
+      setMessage(getFriendlyLoginError(error.message));
       return;
     }
 
@@ -157,6 +195,7 @@ export default function LoginPage() {
   async function handleSignup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setSignupSuccessEmail("");
 
     if (!signupName.trim()) {
       setMessage("请填写昵称。");
@@ -208,41 +247,29 @@ export default function LoginPage() {
       },
     });
 
+    setLoading(false);
+
     if (error) {
       console.error(error);
-      setLoading(false);
-      setMessage(`注册失败：${error.message}`);
+      setMessage(getFriendlySignupError(error.message));
       return;
     }
 
-    if (data.user) {
-      const { error: profileError } = await supabase.from("profiles").upsert({
-        id: data.user.id,
-        display_name: signupName.trim(),
-        school_name: selectedSchool.school_name,
-        school_short_name: selectedSchool.school_short_name,
-        school_email: signupEmail.trim(),
-        contact_email: signupEmail.trim(),
-        show_email: true,
-        cssa_status: "unverified",
-      });
-
-      if (profileError) {
-        console.error(profileError);
-        setLoading(false);
-        setMessage(`账号已创建，但写入个人资料失败：${profileError.message}`);
-        return;
-      }
+    if (data.session) {
+      await redirectAfterLogin();
+      return;
     }
 
-    setLoading(false);
-    setMode("login");
+    setSignupSuccessEmail(signupEmail.trim());
     setLoginEmail(signupEmail.trim());
     setLoginPassword("");
+    setMode("signup");
 
-    setMessage(
-      "注册成功。请前往学校邮箱点击确认邮件，确认后再登录 Campus Market。"
-    );
+    setSignupName("");
+    setSignupEmail("");
+    setSignupPassword("");
+    setSchoolQuery("");
+    setSelectedSchool(null);
   }
 
   return (
@@ -286,6 +313,7 @@ export default function LoginPage() {
                 onClick={() => {
                   setMode("login");
                   setMessage("");
+                  setSignupSuccessEmail("");
                 }}
                 className={`rounded-xl px-4 py-3 text-sm font-medium ${
                   mode === "login"
@@ -345,6 +373,54 @@ export default function LoginPage() {
                   {loading ? "登录中..." : "登录"}
                 </button>
               </form>
+            ) : signupSuccessEmail ? (
+              <div className="mt-6 rounded-3xl border border-emerald-900 bg-emerald-950/20 p-6">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-800 bg-emerald-950/60 text-xl text-emerald-300">
+                  ✓
+                </div>
+
+                <h2 className="mt-5 text-2xl font-bold">确认邮件已发送</h2>
+
+                <p className="mt-4 text-sm leading-7 text-neutral-300">
+                  我们已经向下面这个学校邮箱发送了 Campus Market 注册确认邮件：
+                </p>
+
+                <p className="mt-3 break-all rounded-2xl border border-neutral-800 bg-neutral-950 p-4 text-sm font-medium text-white">
+                  {signupSuccessEmail}
+                </p>
+
+                <p className="mt-4 text-sm leading-7 text-neutral-400">
+                  请打开学校邮箱，点击邮件里的“确认邮箱”。确认完成后，再回到这里登录。
+                </p>
+
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("login");
+                      setMessage("");
+                    }}
+                    className="rounded-full bg-white px-5 py-3 text-center font-medium text-black hover:bg-neutral-200"
+                  >
+                    我已确认，去登录
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSignupSuccessEmail("");
+                      setMode("signup");
+                    }}
+                    className="rounded-full border border-neutral-700 px-5 py-3 text-center font-medium text-white hover:border-neutral-400"
+                  >
+                    重新注册
+                  </button>
+                </div>
+
+                <p className="mt-5 text-xs leading-6 text-neutral-600">
+                  如果没有收到邮件，请检查垃圾邮件文件夹，或者稍等几分钟后再试。
+                </p>
+              </div>
             ) : (
               <form onSubmit={handleSignup} className="mt-6 space-y-5">
                 <div>
