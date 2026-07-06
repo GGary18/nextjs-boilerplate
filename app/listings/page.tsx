@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import AuthNav from "@/app/components/AuthNav";
 import RequireLoginLink from "@/app/components/RequireLoginLink";
 import SchoolMultiSelect, {
@@ -237,11 +238,16 @@ function mapDatabaseListing(row: any): ListingItem {
 }
 
 export default function ListingsPage() {
+  const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
   const [items, setItems] = useState<ListingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+
+  const [authLoading, setAuthLoading] = useState(true);
+  const [mySchoolShortName, setMySchoolShortName] = useState("");
+  const [onlyMySchool, setOnlyMySchool] = useState(true);
 
   const [query, setQuery] = useState("");
   const [selectedSchools, setSelectedSchools] = useState<SchoolOption[]>([]);
@@ -250,6 +256,38 @@ export default function ListingsPage() {
   const [pickupMethod, setPickupMethod] = useState("all");
   const [postTypeFilter, setPostTypeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("latest");
+
+  useEffect(() => {
+    async function loadCurrentUserSchool() {
+      setAuthLoading(true);
+
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !userData.user) {
+        setMySchoolShortName("");
+        setAuthLoading(false);
+        return;
+      }
+
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("school_short_name")
+        .eq("id", userData.user.id)
+        .single();
+
+      if (profileError) {
+        console.error(profileError);
+        setMySchoolShortName("");
+        setAuthLoading(false);
+        return;
+      }
+
+      setMySchoolShortName(profileData?.school_short_name || "");
+      setAuthLoading(false);
+    }
+
+    loadCurrentUserSchool();
+  }, [supabase]);
 
   useEffect(() => {
     async function loadListings() {
@@ -307,9 +345,14 @@ export default function ListingsPage() {
           (selectedSchool) => selectedSchool.school_short_name
         );
 
+        const effectiveSchoolShortNames =
+          onlyMySchool && mySchoolShortName
+            ? [mySchoolShortName]
+            : selectedSchoolShortNames;
+
         const hasSchoolMatch =
-          selectedSchoolShortNames.length === 0 ||
-          selectedSchoolShortNames.includes(item.schoolShortName);
+          effectiveSchoolShortNames.length === 0 ||
+          effectiveSchoolShortNames.includes(item.schoolShortName);
 
         const hasCategoryMatch =
           category === "all" || item.category === category;
@@ -351,6 +394,8 @@ export default function ListingsPage() {
     items,
     query,
     selectedSchools,
+    onlyMySchool,
+    mySchoolShortName,
     category,
     maxPrice,
     pickupMethod,
@@ -361,6 +406,7 @@ export default function ListingsPage() {
   function resetFilters() {
     setQuery("");
     setSelectedSchools([]);
+    setOnlyMySchool(true);
     setCategory("all");
     setMaxPrice("");
     setPickupMethod("all");
@@ -368,11 +414,26 @@ export default function ListingsPage() {
     setSortBy("latest");
   }
 
+  function handleOnlyMySchoolClick() {
+    if (authLoading) return;
+
+    if (!mySchoolShortName) {
+      router.push("/login");
+      return;
+    }
+
+    setOnlyMySchool((currentValue) => !currentValue);
+  }
+
   function handleMaxPriceChange(value: string) {
     if (value === "" || /^\d*(\.\d{0,2})?$/.test(value)) {
       setMaxPrice(value);
     }
   }
+
+  const onlyMySchoolLabel = mySchoolShortName
+    ? `只看本校 · ${mySchoolShortName}`
+    : "登录后只看本校";
 
   return (
     <main className="min-h-screen bg-neutral-950 text-white">
@@ -454,7 +515,36 @@ export default function ListingsPage() {
             >
               求购
             </button>
+
+            <button
+              type="button"
+              onClick={handleOnlyMySchoolClick}
+              disabled={authLoading}
+              className={`rounded-full px-4 py-2 text-sm ${
+                onlyMySchool
+                  ? "border border-emerald-800 bg-emerald-950/40 text-emerald-300"
+                  : "border border-neutral-800 text-neutral-300 hover:border-neutral-500"
+              } disabled:cursor-not-allowed disabled:opacity-60`}
+            >
+              {onlyMySchool ? "☑" : "☐"} {onlyMySchoolLabel}
+            </button>
           </div>
+
+          {onlyMySchool && mySchoolShortName && (
+            <div className="mb-4 rounded-2xl border border-emerald-900 bg-emerald-950/20 px-4 py-3">
+              <p className="text-sm leading-6 text-emerald-200">
+                当前默认只显示 {mySchoolShortName} 的帖子。取消“只看本校”后可以查看全部学校，或手动选择其他学校。
+              </p>
+            </div>
+          )}
+
+          {onlyMySchool && !mySchoolShortName && !authLoading && (
+            <div className="mb-4 rounded-2xl border border-neutral-800 bg-neutral-950 px-4 py-3">
+              <p className="text-sm leading-6 text-neutral-400">
+                登录后会默认只显示你的学校帖子。当前未登录，所以暂时显示全部学校。
+              </p>
+            </div>
+          )}
 
           <div className="grid gap-4 md:grid-cols-4">
             <input
@@ -467,7 +557,11 @@ export default function ListingsPage() {
             <SchoolMultiSelect
               selectedSchools={selectedSchools}
               onChange={setSelectedSchools}
-              placeholder="输入学校简称或全名"
+              placeholder={
+                onlyMySchool && mySchoolShortName
+                  ? `已锁定 ${mySchoolShortName}`
+                  : "输入学校简称或全名"
+              }
             />
 
             <select
