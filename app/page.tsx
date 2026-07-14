@@ -29,7 +29,7 @@ export default function HomePage() {
 
               <p className="mt-5 max-w-2xl text-base leading-7 text-neutral-400">
                 Campus Market 帮留学生浏览二手商品、短租房源、求购需求和求租需求。
-                发布和联系前需要登录，平台会围绕学校邮箱与 CSSA 认证建立基础信任。
+                发布和联系前需要登录，平台会围绕学校邮箱与 CSA/ CSSA 认证建立基础信任。
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">

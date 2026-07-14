@@ -38,7 +38,7 @@ function getRoleLabel(role: string) {
     return "Super Admin";
   }
 
-  return "CSSA Admin";
+  return "CSA/ CSSA Admin";
 }
 
 function getScopeLabel(adminRole: AdminRole | null) {
@@ -55,10 +55,10 @@ function getScopeLabel(adminRole: AdminRole | null) {
 
 function getCssaStatusLabel(status: string | null) {
   if (status === "verified") {
-    return "CSSA 已认证";
+    return "CSA/ CSSA 已认证";
   }
 
-  return "CSSA 未认证";
+  return "CSA/ CSSA 未认证";
 }
 
 function formatDate(dateString: string | null) {
@@ -291,7 +291,7 @@ export default function AdminPage() {
   }
 
   async function handleRevokeVerification(studentId: string) {
-    const confirmed = window.confirm("确定要取消这个用户的 CSSA 认证吗？");
+    const confirmed = window.confirm("确定要取消这个用户的 CSA/ CSSA 认证吗？");
 
     if (!confirmed) {
       return;
@@ -453,7 +453,7 @@ export default function AdminPage() {
 
           <div className="mt-4 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div>
-              <h1 className="text-4xl font-bold">CSSA 认证管理</h1>
+              <h1 className="text-4xl font-bold">CSA/ CSSA 认证管理</h1>
 
               <p className="mt-3 text-neutral-400">当前登录：{userEmail}</p>
             </div>
@@ -516,7 +516,7 @@ export default function AdminPage() {
                   disabled={isVerifyingUser}
                   className="rounded-full bg-white px-5 py-3 font-medium text-black hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isVerifyingUser ? "认证中..." : "CSSA 认证"}
+                  {isVerifyingUser ? "认证中..." : "CSA/ CSSA 认证"}
                 </button>
               </div>
             </div>
@@ -674,7 +674,7 @@ export default function AdminPage() {
                       </div>
 
                       <span className="w-fit rounded-full border border-green-900/70 bg-green-950/30 px-3 py-1 text-xs text-green-300">
-                        CSSA 已认证
+                        CSA/ CSSA 已认证
                       </span>
                     </div>
 

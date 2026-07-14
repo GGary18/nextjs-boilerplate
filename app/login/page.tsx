@@ -301,7 +301,7 @@ export default function LoginPage() {
               <h2 className="font-semibold">认证说明</h2>
 
               <p className="mt-3 text-sm leading-7 text-neutral-400">
-                注册需要选择学校并使用对应学校邮箱。CSSA 认证会在个人主页显示具体联系邮箱。
+                注册需要选择学校并使用对应学校邮箱。CSA/ CSSA 认证会在个人主页显示具体联系邮箱。
               </p>
             </div>
           </div>

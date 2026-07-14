@@ -64,10 +64,10 @@ function formatDate(dateString: string | null) {
 
 function getCssaStatusText(status: string | null) {
   if (status === "verified") {
-    return "CSSA 已认证";
+    return "CSA/ CSSA 已认证";
   }
 
-  return "CSSA 未认证";
+  return "CSA/ CSSA 未认证";
 }
 
 function getPostLabel(post: ManagedPost) {

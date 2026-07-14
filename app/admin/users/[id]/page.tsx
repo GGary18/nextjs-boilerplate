@@ -629,7 +629,7 @@ export default function AdminUserDetailPage() {
     if (!profile) return;
 
     const confirmed = window.confirm(
-      `确定要取消这个用户的 CSSA 认证吗？\n\n${
+      `确定要取消这个用户的 CSA/ CSSA 认证吗？\n\n${
         profile.email || profile.school_email || profile.display_name || profile.id
       }`
     );
@@ -656,7 +656,7 @@ export default function AdminUserDetailPage() {
       cssa_status: "revoked",
     });
 
-    setMessage("已取消该用户的 CSSA 认证。");
+    setMessage("已取消该用户的 CSA/ CSSA 认证。");
   }
 
   if (loading) {
@@ -800,7 +800,7 @@ export default function AdminUserDetailPage() {
                   disabled={actionLoading}
                   className="rounded-full border border-red-900 px-5 py-3 text-sm font-medium text-red-300 hover:border-red-600 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {actionLoading ? "处理中..." : "取消 CSSA 认证"}
+                  {actionLoading ? "处理中..." : "取消 CSA/ CSSA 认证"}
                 </button>
               )}
 

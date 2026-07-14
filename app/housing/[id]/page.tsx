@@ -467,7 +467,7 @@ export default function HousingDetailPage() {
 
                   {sellerProfile?.cssa_status === "verified" && (
                     <span className="rounded-full border border-emerald-800 bg-emerald-950/40 px-3 py-1 text-xs text-emerald-300">
-                      CSSA 已认证
+                      CSA/ CSSA 已认证
                     </span>
                   )}
                 </div>
