@@ -134,7 +134,7 @@ export default function CssaVerificationNotice({
             </p>
 
             <p className="mt-4 text-xs leading-6 text-neutral-600">
-              平台会优先记录你的认证需求，并在该学校 CSSA 管理员对接后继续处理。
+              平台会优先记录你的认证需求，并在该学校 CSA/ CSSA 管理员对接后继续处理。
             </p>
           </>
         )}
