@@ -21,10 +21,22 @@ function emailMatchesSchool(email: string, school: SchoolOption | null) {
   if (!school) return false;
 
   const normalizedEmail = normalizeText(email);
+  const atIndex = normalizedEmail.lastIndexOf("@");
 
-  return school.email_domains.some((domain) =>
-    normalizedEmail.endsWith(`@${normalizeText(domain)}`)
-  );
+  if (atIndex === -1) {
+    return false;
+  }
+
+  const emailDomain = normalizedEmail.slice(atIndex + 1);
+
+  return school.email_domains.some((domain) => {
+    const allowedDomain = normalizeText(domain);
+
+    return (
+      emailDomain === allowedDomain ||
+      emailDomain.endsWith(`.${allowedDomain}`)
+    );
+  });
 }
 
 function getSchoolScore(school: SchoolOption, query: string) {
@@ -51,7 +63,10 @@ function getFriendlySignupError(errorMessage: string) {
     return "确认邮件发送频率过高，请稍后再试。";
   }
 
-  if (message.includes("already registered") || message.includes("already exists")) {
+  if (
+    message.includes("already registered") ||
+    message.includes("already exists")
+  ) {
     return "这个邮箱可能已经注册过了。请直接登录，或者检查邮箱里的确认邮件。";
   }
 
@@ -444,9 +459,11 @@ export default function LoginPage() {
                           <p className="font-medium">
                             {selectedSchool.school_short_name}
                           </p>
+
                           <p className="mt-1 text-sm text-neutral-400">
                             {selectedSchool.school_name}
                           </p>
+
                           <p className="mt-1 text-xs text-neutral-600">
                             {selectedSchool.email_domains.join(", ")}
                           </p>
@@ -500,9 +517,11 @@ export default function LoginPage() {
                               <p className="font-medium">
                                 {school.school_short_name}
                               </p>
+
                               <p className="mt-1 text-sm text-neutral-400">
                                 {school.school_name}
                               </p>
+
                               <p className="mt-1 text-xs text-neutral-600">
                                 {school.email_domains.join(", ")}
                               </p>
