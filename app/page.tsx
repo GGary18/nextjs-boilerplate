@@ -1,6 +1,5 @@
 import Link from "next/link";
 import AuthNav from "@/app/components/AuthNav";
-import RequireLoginLink from "@/app/components/RequireLoginLink";
 
 export default function HomePage() {
   return (
@@ -29,7 +28,7 @@ export default function HomePage() {
 
               <p className="mt-5 max-w-2xl text-base leading-7 text-neutral-400">
                 Campus Market 帮留学生浏览二手商品、短租房源、求购需求和求租需求。
-                发布和联系前需要登录，平台会围绕学校邮箱与 CSA/ CSSA 认证建立基础信任。
+                无需登录即可发布和联系；完成学校邮箱与 CSA/ CSSA 认证的账号会显示对应认证状态。
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -60,15 +59,14 @@ export default function HomePage() {
                 </div>
 
                 <p className="hidden max-w-xs text-right text-sm leading-6 text-neutral-500 sm:block">
-                  发布前需要登录。
+                  发布时需选择学校、公开至少一种联系方式并设置四位删除码。
                 </p>
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <RequireLoginLink
+                <Link
                   href="/sell"
                   className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4 text-left transition hover:border-neutral-500"
-                  message="发布二手商品需要先登录。"
                 >
                   <span className="block text-xs text-neutral-500">
                     Sell Product
@@ -81,12 +79,11 @@ export default function HomePage() {
                   <span className="mt-2 block text-sm leading-5 text-neutral-400">
                     出售家具、电子产品、生活用品等。
                   </span>
-                </RequireLoginLink>
+                </Link>
 
-                <RequireLoginLink
+                <Link
                   href="/request-item"
                   className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4 text-left transition hover:border-neutral-500"
-                  message="发布求购需求需要先登录。"
                 >
                   <span className="block text-xs text-neutral-500">
                     Request Product
@@ -99,12 +96,11 @@ export default function HomePage() {
                   <span className="mt-2 block text-sm leading-5 text-neutral-400">
                     发布想收的东西和预算上限。
                   </span>
-                </RequireLoginLink>
+                </Link>
 
-                <RequireLoginLink
+                <Link
                   href="/post-housing"
                   className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4 text-left transition hover:border-neutral-500"
-                  message="发布短租房源需要先登录。"
                 >
                   <span className="block text-xs text-neutral-500">
                     Post Housing
@@ -117,12 +113,11 @@ export default function HomePage() {
                   <span className="mt-2 block text-sm leading-5 text-neutral-400">
                     发布短租、转租、暑期房源。
                   </span>
-                </RequireLoginLink>
+                </Link>
 
-                <RequireLoginLink
+                <Link
                   href="/request-housing"
                   className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4 text-left transition hover:border-neutral-500"
-                  message="发布求租需求需要先登录。"
                 >
                   <span className="block text-xs text-neutral-500">
                     Request Housing
@@ -135,7 +130,7 @@ export default function HomePage() {
                   <span className="mt-2 block text-sm leading-5 text-neutral-400">
                     发布想找的房型、区域和预算。
                   </span>
-                </RequireLoginLink>
+                </Link>
               </div>
             </div>
           </div>

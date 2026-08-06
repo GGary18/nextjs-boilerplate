@@ -9,6 +9,10 @@ import SchoolSearchSelect, {
   type SchoolOption,
 } from "@/app/components/SchoolSearchSelect";
 import TagInput from "@/app/components/TagInput";
+import PostContactFields, {
+  hasSelectedContact,
+  readPostContactFields,
+} from "@/app/components/PostContactFields";
 
 const CATEGORY_OPTIONS = [
   "家具",
@@ -49,21 +53,6 @@ const TRADE_MODE_TEXT = "买卖双方自行沟通付款和交接";
 type UploadedImage = {
   file: File;
   previewUrl: string;
-};
-
-type ContactProfile = {
-  wechat: string | null;
-  phone: string | null;
-  contact_email: string | null;
-  show_wechat: boolean | null;
-  show_phone: boolean | null;
-  show_email: boolean | null;
-};
-
-type ContactSnapshot = {
-  contact_wechat: string | null;
-  contact_phone: string | null;
-  contact_email: string | null;
 };
 
 function normalizeTag(value: string) {
@@ -116,41 +105,6 @@ function buildTags({
   return Array.from(new Set(tags));
 }
 
-function getContactSnapshot(profile: ContactProfile | null): ContactSnapshot {
-  if (!profile) {
-    return {
-      contact_wechat: null,
-      contact_phone: null,
-      contact_email: null,
-    };
-  }
-
-  const contactWechat =
-    profile.show_wechat && profile.wechat?.trim()
-      ? profile.wechat.trim()
-      : null;
-
-  const contactPhone =
-    profile.show_phone && profile.phone?.trim() ? profile.phone.trim() : null;
-
-  const contactEmail =
-    profile.show_email && profile.contact_email?.trim()
-      ? profile.contact_email.trim()
-      : null;
-
-  return {
-    contact_wechat: contactWechat,
-    contact_phone: contactPhone,
-    contact_email: contactEmail,
-  };
-}
-
-function hasAnyContactSnapshot(snapshot: ContactSnapshot) {
-  return Boolean(
-    snapshot.contact_wechat || snapshot.contact_phone || snapshot.contact_email
-  );
-}
-
 async function compressImage(file: File) {
   return imageCompression(file, {
     maxSizeMB: 0.8,
@@ -181,7 +135,6 @@ export default function SellPage() {
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
-  const [needsContactSetup, setNeedsContactSetup] = useState(false);
 
   function handleMoneyChange(value: string) {
     if (value === "" || /^\d*(\.\d{0,2})?$/.test(value)) {
@@ -223,13 +176,13 @@ export default function SellPage() {
     });
   }
 
-  async function uploadImages(userId: string) {
+  async function uploadImages(postId: string) {
     const uploadedUrls: string[] = [];
 
     for (const image of images) {
       const compressedImage = await compressImage(image.file);
 
-      const fileName = `${userId}/${crypto.randomUUID()}.webp`;
+      const fileName = `${postId}/${crypto.randomUUID()}.webp`;
 
       const { error: uploadError } = await supabase.storage
         .from("listing-images")
@@ -253,60 +206,38 @@ export default function SellPage() {
     return uploadedUrls;
   }
 
-  async function getUserContactSnapshot(userId: string) {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("wechat, phone, contact_email, show_wechat, show_phone, show_email")
-      .eq("id", userId)
-      .single();
-
-    if (error) {
-      console.error(error);
-      return {
-        contact_wechat: null,
-        contact_phone: null,
-        contact_email: null,
-      };
-    }
-
-    return getContactSnapshot(data as ContactProfile | null);
-  }
-
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
-    setNeedsContactSetup(false);
+    const contactSnapshot = readPostContactFields(event.currentTarget);
 
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError) {
+    if (userError && userError.name !== "AuthSessionMissingError") {
       console.error(userError);
       setMessage(`读取登录状态失败：${userError.message}`);
       return;
     }
 
-    if (!user) {
-      setMessage("请先登录后再发布商品。");
-      return;
-    }
-
-    const { data: adminRoleData, error: adminRoleError } = await supabase.rpc(
-      "get_current_admin_role"
-    );
+    const { data: adminRoleData, error: adminRoleError } = user
+      ? await supabase.rpc("get_current_admin_role")
+      : { data: null, error: null };
 
     if (!adminRoleError && Array.isArray(adminRoleData) && adminRoleData[0]) {
       router.push("/admin");
       return;
     }
 
-    const contactSnapshot = await getUserContactSnapshot(user.id);
+    if (!hasSelectedContact(contactSnapshot)) {
+      setMessage("请至少填写并勾选一种联系方式：微信、手机号或邮箱。");
+      return;
+    }
 
-    if (!hasAnyContactSnapshot(contactSnapshot)) {
-      setNeedsContactSetup(true);
-      setMessage("发布前请至少公开一种联系方式：微信、手机号或邮箱。");
+    if (!/^\d{4}$/.test(contactSnapshot.deleteCode)) {
+      setMessage("删除码必须是四位数字。");
       return;
     }
 
@@ -348,7 +279,8 @@ export default function SellPage() {
     setIsSubmitting(true);
 
     try {
-      const imageUrls = await uploadImages(user.id);
+      const postId = crypto.randomUUID();
+      const imageUrls = await uploadImages(postId);
 
       const searchTags = buildTags({
         title,
@@ -362,7 +294,8 @@ export default function SellPage() {
       const { data: insertedListing, error: insertError } = await supabase
         .from("listings")
         .insert({
-          owner_id: user.id,
+          id: postId,
+          owner_id: user?.id ?? null,
           post_type: "offer",
           title: title.trim(),
           price_label: formatPriceLabel(priceValue, priceNote),
@@ -383,6 +316,7 @@ export default function SellPage() {
           contact_phone: contactSnapshot.contact_phone,
           contact_email: contactSnapshot.contact_email,
           contact_snapshot_at: new Date().toISOString(),
+          delete_code: contactSnapshot.deleteCode,
         })
         .select("id")
         .single();
@@ -445,7 +379,7 @@ export default function SellPage() {
           <h1 className="mt-3 text-4xl font-bold">卖一件东西</h1>
 
           <p className="mt-4 max-w-2xl text-sm leading-6 text-neutral-400">
-            发布时会保存你当前公开的联系方式。之后即使你在个人主页关闭联系方式，这个帖子仍会保留发布时的联系信息。
+            登录不是发布的必要条件。请选择学校，并在本次发布中勾选至少一种联系方式。
           </p>
         </section>
 
@@ -573,6 +507,8 @@ export default function SellPage() {
             </div>
           </section>
 
+          <PostContactFields />
+
           <section className="rounded-3xl border border-neutral-800 bg-neutral-900/40 p-6">
             <h2 className="text-xl font-semibold">图片、标签和描述</h2>
 
@@ -647,14 +583,6 @@ export default function SellPage() {
             <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
               <p className="text-sm text-neutral-300">{message}</p>
 
-              {needsContactSetup && (
-                <Link
-                  href="/profile"
-                  className="mt-3 inline-block rounded-full bg-white px-5 py-2 text-sm font-medium text-black hover:bg-neutral-200"
-                >
-                  去个人主页设置联系方式
-                </Link>
-              )}
             </div>
           )}
 

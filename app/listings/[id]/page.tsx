@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 
 type Listing = {
   id: string;
-  owner_id: string;
+  owner_id: string | null;
   post_type: "offer" | "request";
   title: string;
   price_label: string;
@@ -30,6 +30,7 @@ type Listing = {
   contact_phone: string | null;
   contact_email: string | null;
   contact_snapshot_at: string | null;
+  school_email_verified: boolean;
 };
 
 type SellerProfile = {
@@ -437,11 +438,12 @@ export default function ListingDetailPage() {
                     {isRequest ? "联系求购者" : "联系卖家"}
                   </h2>
 
-                  {sellerProfile?.cssa_status === "verified" && (
-                    <span className="rounded-full border border-emerald-800 bg-emerald-950/40 px-3 py-1 text-xs text-emerald-300">
-                      CSA/ CSSA 已认证
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`rounded-full border px-3 py-1 text-xs ${listing.school_email_verified ? "border-emerald-800 text-emerald-300" : "border-neutral-700 text-neutral-400"}`}>
+                      {listing.school_email_verified ? "学校邮箱已认证" : "学校邮箱未认证"}
                     </span>
-                  )}
+                    {sellerProfile?.cssa_status === "verified" && <span className="rounded-full border border-emerald-800 bg-emerald-950/40 px-3 py-1 text-xs text-emerald-300">CSA/ CSSA 已认证</span>}
+                  </div>
                 </div>
 
                 {contactInfo.source === "none" ? (

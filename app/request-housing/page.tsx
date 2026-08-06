@@ -8,6 +8,7 @@ import SchoolSearchSelect, {
   type SchoolOption,
 } from "@/app/components/SchoolSearchSelect";
 import TagInput from "@/app/components/TagInput";
+import PostContactFields, { hasSelectedContact, readPostContactFields } from "@/app/components/PostContactFields";
 
 const HOUSING_TYPE_OPTIONS = [
   "Studio",
@@ -182,7 +183,6 @@ export default function RequestHousingPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
-  const [needsContactSetup, setNeedsContactSetup] = useState(false);
 
   function handleMoneyChange(value: string) {
     if (value === "" || /^\d*(\.\d{0,2})?$/.test(value)) {
@@ -212,38 +212,34 @@ export default function RequestHousingPage() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
-    setNeedsContactSetup(false);
+    const contactSnapshot = readPostContactFields(event.currentTarget);
 
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError) {
+    if (userError && userError.name !== "AuthSessionMissingError") {
       console.error(userError);
       setMessage(`读取登录状态失败：${userError.message}`);
       return;
     }
 
-    if (!user) {
-      setMessage("请先登录后再发布求租。");
-      return;
-    }
-
-    const { data: adminRoleData, error: adminRoleError } = await supabase.rpc(
-      "get_current_admin_role"
-    );
+    const { data: adminRoleData, error: adminRoleError } = user
+      ? await supabase.rpc("get_current_admin_role")
+      : { data: null, error: null };
 
     if (!adminRoleError && Array.isArray(adminRoleData) && adminRoleData[0]) {
       router.push("/admin");
       return;
     }
 
-    const contactSnapshot = await getUserContactSnapshot(user.id);
-
-    if (!hasAnyContactSnapshot(contactSnapshot)) {
-      setNeedsContactSetup(true);
-      setMessage("发布前请至少公开一种联系方式：微信、手机号或邮箱。");
+    if (!hasSelectedContact(contactSnapshot)) {
+      setMessage("请至少填写并勾选一种联系方式：微信、手机号或邮箱。");
+      return;
+    }
+    if (!/^\d{4}$/.test(contactSnapshot.deleteCode)) {
+      setMessage("删除码必须是四位数字。");
       return;
     }
 
@@ -314,7 +310,8 @@ export default function RequestHousingPage() {
       const { data: insertedPost, error: insertError } = await supabase
         .from("housing_posts")
         .insert({
-          owner_id: user.id,
+          id: crypto.randomUUID(),
+          owner_id: user?.id ?? null,
           post_type: "request",
           title: title.trim(),
           rent_label: formatRentLabel(rentValue, rentNote),
@@ -338,6 +335,7 @@ export default function RequestHousingPage() {
           contact_phone: contactSnapshot.contact_phone,
           contact_email: contactSnapshot.contact_email,
           contact_snapshot_at: new Date().toISOString(),
+          delete_code: contactSnapshot.deleteCode,
         })
         .select("id")
         .single();
@@ -400,7 +398,7 @@ export default function RequestHousingPage() {
           <h1 className="mt-3 text-4xl font-bold">想找一套房子</h1>
 
           <p className="mt-4 max-w-2xl text-sm leading-6 text-neutral-400">
-            发布时会保存你当前公开的联系方式。之后即使你在个人主页关闭联系方式，这个求租帖仍会保留发布时的联系信息。
+            登录不是发布的必要条件。请选择学校，并在本次发布中勾选至少一种联系方式。
           </p>
         </section>
 
@@ -539,6 +537,7 @@ export default function RequestHousingPage() {
                   type="date"
                   value={startDate}
                   onChange={(event) => setStartDate(event.target.value)}
+                  onInput={(event) => setStartDate(event.currentTarget.value)}
                   className="mt-2 w-full rounded-2xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-white outline-none focus:border-neutral-500"
                 />
               </div>
@@ -550,11 +549,14 @@ export default function RequestHousingPage() {
                   type="date"
                   value={endDate}
                   onChange={(event) => setEndDate(event.target.value)}
+                  onInput={(event) => setEndDate(event.currentTarget.value)}
                   className="mt-2 w-full rounded-2xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-white outline-none focus:border-neutral-500"
                 />
               </div>
             </div>
           </section>
+
+          <PostContactFields />
 
           <section className="rounded-3xl border border-neutral-800 bg-neutral-900/40 p-6">
             <h2 className="text-xl font-semibold">标签和描述</h2>
@@ -586,14 +588,6 @@ export default function RequestHousingPage() {
             <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
               <p className="text-sm text-neutral-300">{message}</p>
 
-              {needsContactSetup && (
-                <Link
-                  href="/profile"
-                  className="mt-3 inline-block rounded-full bg-white px-5 py-2 text-sm font-medium text-black hover:bg-neutral-200"
-                >
-                  去个人主页设置联系方式
-                </Link>
-              )}
             </div>
           )}
 

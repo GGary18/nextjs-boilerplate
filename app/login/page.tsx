@@ -309,7 +309,7 @@ export default function LoginPage() {
             </h1>
 
             <p className="mt-5 max-w-xl text-sm leading-7 text-neutral-400">
-              注册后可以发布商品、发布求购、发布短租房源和求租需求。发布前需要在个人主页至少公开一种联系方式。
+              注册后可获得学校邮箱认证标识并管理个人资料。未登录也可以发布，发布时需公开至少一种联系方式。
             </p>
 
             <div className="mt-8 rounded-3xl border border-neutral-800 bg-neutral-900/40 p-5">

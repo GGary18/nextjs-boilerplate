@@ -156,9 +156,9 @@ export default function EditProfilePage() {
       phone: form.phone.trim(),
       contact_email: form.contact_email.trim(),
 
-      show_wechat: form.show_wechat,
-      show_phone: form.show_phone,
-      show_email: form.show_email,
+      show_wechat: false,
+      show_phone: false,
+      show_email: false,
 
       updated_at: new Date().toISOString(),
     });
@@ -310,7 +310,7 @@ export default function EditProfilePage() {
             <h2 className="text-2xl font-bold">联系方式</h2>
 
             <p className="mt-3 text-sm text-neutral-500">
-              这些联系方式是否展示给其他用户，由下面的公开开关决定。
+              这些信息只用于在发布页面自动填充。每次发布时，你可以单独勾选本帖要公开的联系方式。
             </p>
 
             <div className="mt-5 grid gap-5 md:grid-cols-3">
@@ -352,61 +352,6 @@ export default function EditProfilePage() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
-              <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
-                <span>
-                  <span className="block font-medium">公开微信号</span>
-                  <span className="mt-1 block text-xs text-neutral-500">
-                    公开主页展示微信
-                  </span>
-                </span>
-
-                <input
-                  checked={form.show_wechat}
-                  onChange={(event) =>
-                    updateField("show_wechat", event.target.checked)
-                  }
-                  type="checkbox"
-                  className="h-5 w-5"
-                />
-              </label>
-
-              <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
-                <span>
-                  <span className="block font-medium">公开电话</span>
-                  <span className="mt-1 block text-xs text-neutral-500">
-                    公开主页展示电话
-                  </span>
-                </span>
-
-                <input
-                  checked={form.show_phone}
-                  onChange={(event) =>
-                    updateField("show_phone", event.target.checked)
-                  }
-                  type="checkbox"
-                  className="h-5 w-5"
-                />
-              </label>
-
-              <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
-                <span>
-                  <span className="block font-medium">公开邮箱</span>
-                  <span className="mt-1 block text-xs text-neutral-500">
-                    公开主页展示邮箱
-                  </span>
-                </span>
-
-                <input
-                  checked={form.show_email}
-                  onChange={(event) =>
-                    updateField("show_email", event.target.checked)
-                  }
-                  type="checkbox"
-                  className="h-5 w-5"
-                />
-              </label>
-            </div>
           </section>
 
           {errorMessage && (

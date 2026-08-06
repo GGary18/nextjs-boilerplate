@@ -16,7 +16,7 @@ export default function AuthConfirmedPage() {
           <h1 className="mt-6 text-3xl font-bold">邮箱认证成功</h1>
 
           <p className="mt-4 text-sm leading-7 text-neutral-400">
-            你的 Campus Market 账号已经完成邮箱确认。现在可以登录、发布商品、发布房源，或者管理你的个人主页联系方式。
+            你的 Campus Market 账号已经完成邮箱确认。现在可以登录并使用学校邮箱认证身份发布，或管理个人资料。
           </p>
 
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">

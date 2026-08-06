@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthNav from "@/app/components/AuthNav";
-import RequireLoginLink from "@/app/components/RequireLoginLink";
+import DeletePostButton from "@/app/components/DeletePostButton";
 import SchoolMultiSelect, {
   type SchoolOption,
 } from "@/app/components/SchoolMultiSelect";
@@ -24,6 +24,7 @@ type ListingItem = {
 
   schoolName: string;
   schoolShortName: string;
+  schoolEmailVerified: boolean;
 
   location: string;
   category: string;
@@ -220,6 +221,7 @@ function mapDatabaseListing(row: any): ListingItem {
 
     schoolName: row.school_name || "",
     schoolShortName: row.school_short_name || "",
+    schoolEmailVerified: Boolean(row.school_email_verified),
 
     location: row.location || "",
     category: row.category || "",
@@ -460,21 +462,19 @@ export default function ListingsPage() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <RequireLoginLink
+            <Link
               href="/sell"
               className="w-fit rounded-full bg-white px-6 py-3 font-medium text-black hover:bg-neutral-200"
-              message="发布二手商品需要先登录。登录后你可以发布商品、管理商品状态。"
             >
               发布商品
-            </RequireLoginLink>
+            </Link>
 
-            <RequireLoginLink
+            <Link
               href="/request-item"
               className="w-fit rounded-full border border-neutral-700 px-6 py-3 font-medium text-white hover:border-neutral-400"
-              message="发布求购需求需要先登录。登录后其他用户可以通过你的个人主页联系你。"
             >
               求好物
-            </RequireLoginLink>
+            </Link>
           </div>
         </header>
 
@@ -715,6 +715,9 @@ export default function ListingsPage() {
                             >
                               {item.postType === "request" ? "求购" : "出售"}
                             </span>
+                            <span className={`ml-2 rounded-full border px-3 py-1 text-xs ${item.schoolEmailVerified ? "border-emerald-700 text-emerald-300" : "border-neutral-700 text-neutral-400"}`}>
+                              {item.schoolEmailVerified ? "学校邮箱已认证" : "学校邮箱未认证"}
+                            </span>
                           </div>
 
                           <h2 className="text-xl font-semibold">
@@ -769,14 +772,12 @@ export default function ListingsPage() {
                             : "商品发布者"}
                         </p>
 
-                        <Link
-                          href={`/listings/${item.id}`}
-                          className="rounded-full border border-neutral-700 px-4 py-2 text-sm hover:border-neutral-400"
-                        >
-                          {item.postType === "request"
-                            ? "查看需求"
-                            : "查看详情"}
-                        </Link>
+                        <div className="flex gap-2">
+                          <Link href={`/listings/${item.id}`} className="rounded-full border border-neutral-700 px-4 py-2 text-sm hover:border-neutral-400">
+                            {item.postType === "request" ? "查看需求" : "查看详情"}
+                          </Link>
+                          <DeletePostButton postId={item.id} table="listings" onDeleted={() => setItems((current) => current.filter((post) => post.id !== item.id))} />
+                        </div>
                       </div>
                     </div>
                   );

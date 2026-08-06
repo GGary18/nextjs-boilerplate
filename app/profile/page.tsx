@@ -325,11 +325,21 @@ export default function ProfilePage() {
 
     const tableName = post.kind === "listing" ? "listings" : "housing_posts";
 
-    const { error } = await supabase.from(tableName).delete().eq("id", post.id);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const response = await fetch("/api/posts/delete", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        ...(sessionData.session?.access_token
+          ? { Authorization: `Bearer ${sessionData.session.access_token}` }
+          : {}),
+      },
+      body: JSON.stringify({ table: tableName, postId: post.id, deleteCode: "" }),
+    });
 
-    if (error) {
-      console.error(error);
-      setMessage(`删除失败：${error.message}`);
+    if (!response.ok) {
+      const result = (await response.json()) as { error?: string };
+      setMessage(result.error || "删除失败，请稍后再试。");
       return;
     }
 
